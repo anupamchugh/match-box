@@ -15,10 +15,10 @@ Read the draft [privacy notes](docs/PRIVACY.md) and the local-only
 [Product Hunt draft](docs/PRODUCT_HUNT_DRAFT.md) before preparing any public
 material.
 
-![Fictional Match Box local-review demo](docs/assets/match-box-fictional-demo.png)
+![Fictional Match Box grounded-suggestion demo](docs/assets/match-box-suggestions-fictional-demo.png)
 
-*Fictional demo content only. Match Box has no Bumble, Hinge, or other dating
-service API integration.*
+*Fictional demo content only. Suggestions are grounded in visible context;
+Match Box has no Bumble, Hinge, or other dating-service API integration.*
 
 ## OSS status
 
