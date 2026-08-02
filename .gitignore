@@ -1,0 +1,8 @@
+.worktrees/
+.codex/
+.build/
+.match-inbox/
+imports/
+screenshots/
+dist/
+docs/superpowers/plans/
