@@ -13,6 +13,32 @@ swipe, like, match, contact, or send capability. Mirroir MCP is useful while
 developing and validating the visible-screen adapters; it is not a shipped app
 dependency.
 
+## Why Machiss exists
+
+Machiss started with a small problem: sending one decent message without losing
+the thread of the conversation or handing a private screenshot to a remote
+service. It is a local conversation desk, not a dating bot. The point is to
+help you notice what was said, understand what is still unknown, and choose
+your own next move.
+
+## What is interesting technically
+
+The app combines a review-first ScreenCaptureKit/Vision path with SwiftUI,
+Observation, SwiftData, and Apple Foundation Models on supported Macs. Model
+output is typed, local, and grounded in approved observations. Each idea keeps
+the observations that support it; if the context is insufficient, the model
+must preserve the unknown instead of inventing a person or a fact.
+
+The public repository uses fictional fixtures and generated artwork. It does
+not contain real dating profiles, messages, photos, accounts, or service
+credentials.
+
+## What this is not
+
+Machiss is not an autoswiper, scraper, dating-service integration, or message
+agent. It never taps, types, likes, matches, or sends. The owner reviews every
+visible observation and decides what—if anything—to do in the source app.
+
 Read the [privacy notes](docs/PRIVACY.md) and [support guide](docs/SUPPORT.md)
 before preparing public material.
 
