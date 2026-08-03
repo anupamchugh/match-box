@@ -13,13 +13,24 @@ swipe, like, match, contact, or send capability. Mirroir MCP is useful while
 developing and validating the visible-screen adapters; it is not a shipped app
 dependency.
 
-## Why Machiss exists
+## The core idea: a local debugger for social context
 
 Machiss started with a small problem: sending one decent message without losing
 the thread of the conversation or handing a private screenshot to a remote
 service. It is a local conversation desk, not a dating bot. The point is to
 help you notice what was said, understand what is still unknown, and choose
 your own next move.
+
+The deeper idea is a debugger for social context. A conversation is treated as
+an evidence graph: what was visibly observed, who authored it, where it came
+from, when it first appeared, and which suggestion it supports. The user can
+inspect the path from observation to model output instead of receiving an
+untraceable answer.
+
+Dating is the first adapter because it makes the problem obvious. The same
+pattern could eventually apply to other private social contexts—messages,
+communities, collaborative work, or personal correspondence—without turning
+them into a cloud profile or an autonomous agent.
 
 ## What is interesting technically
 
