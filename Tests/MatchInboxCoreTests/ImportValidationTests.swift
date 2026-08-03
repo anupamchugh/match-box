@@ -53,6 +53,31 @@ func classifiesIncomingMessageAsReplyNow() {
     #expect(ThreadClassifier.priority(for: thread) == .replyNow)
 }
 
+@Test("capture diff identifies only newly visible lines")
+func captureDiffIdentifiesNewVisibleLines() {
+    let prior = MatchImport(
+        ownerID: "me",
+        provenance: ImportProvenance(sourceApp: "bumble", sourceScreen: "bumbleThread", capturedAt: "2026-08-03T10:00:00Z"),
+        profiles: [Profile(id: "alex", displayName: "Alex", visibleFacts: ["visible_text: Hi"])],
+        threads: []
+    )
+    let capture = ScreenCapture(
+        sourceApp: "bumble",
+        kind: .bumbleThread,
+        observations: [
+            VisibleObservation(field: "visible_text", text: "Hi", confidence: 0.9),
+            VisibleObservation(field: "visible_text", text: "How was your day?", confidence: 0.9)
+        ],
+        capturedAt: "2026-08-03T10:05:00Z"
+    )
+
+    let diff = CaptureDiff.compare(capture: capture, history: prior)
+
+    #expect(diff.isFresh)
+    #expect(diff.newVisibleText == ["How was your day?"])
+    #expect(diff.previousCaptureAt == "2026-08-03T10:00:00Z")
+}
+
 @Test("profile brief keeps visible facts separate from unknown context")
 func buildsProfileBrief() {
     let profile = Profile(
@@ -181,6 +206,39 @@ func derivesCaptureIdentity() {
     #expect(identity.id == "bumble-s")
 }
 
+@Test("thread identity prefers a visible header observation by vertical position")
+func prefersHeaderObservationByVerticalPosition() {
+    let identity = CaptureIdentity.make(
+        sourceApp: "bumble",
+        kind: .bumbleThread,
+        observations: [
+            VisibleObservation(field: "visible_text", text: "Your Opening Move", confidence: 0.99, positionY: 0.78),
+            VisibleObservation(field: "visible_text", text: "B", confidence: 0.99, positionY: 0.87),
+            VisibleObservation(field: "visible_text", text: "Fictional productive weekend plans", confidence: 0.99, positionY: 0.64)
+        ]
+    )
+
+    #expect(identity.displayName == "B")
+}
+
+@Test("identity extraction skips conversation chrome before the visible header")
+func skipsConversationChromeWhenDerivingIdentity() {
+    let identity = CaptureIdentity.make(
+        sourceApp: "bumble",
+        kind: .bumbleThread,
+        observations: [
+            VisibleObservation(field: "visible_text", text: "24", confidence: 0.99),
+            VisibleObservation(field: "visible_text", text: "11:32", confidence: 0.99),
+            VisibleObservation(field: "visible_text", text: "Your Opening Move", confidence: 0.99),
+            VisibleObservation(field: "visible_text", text: "B", confidence: 0.99),
+            VisibleObservation(field: "visible_text", text: "What does your perfect weekend look like?", confidence: 0.99)
+        ]
+    )
+
+    #expect(identity.displayName == "B")
+    #expect(identity.id == "bumble-b")
+}
+
 @Test("uses source context rather than inventing a person from an inbox heading")
 func derivesInboxContextIdentity() {
     let identity = CaptureIdentity.make(
@@ -219,7 +277,7 @@ func retainsCapturedScreenKind() throws {
     let imported = try CaptureImporter.makeImport(ownerID: "me", profileID: "bumble-likes", displayName: "Bumble likes", capture: capture)
 
     #expect(imported.profiles.first?.capturedKinds == [.bumbleLikes])
-    #expect(MatchBoxInbox.sections(for: imported) == [.likes])
+    #expect(MatchBoxInbox.sections(for: imported) == [.suggestions, .likes])
 }
 
 @Test("turns a Mirroir development observation into the same reviewable capture type")
@@ -370,6 +428,6 @@ func importsPositionedConversationBubbles() throws {
 
 @Test("exposes a concise menu-bar label for the local companion")
 func exposesMenuBarLabel() {
-    #expect(MatchBoxPresentation.menuBarTitle == "Match Box")
+    #expect(MatchBoxPresentation.menuBarTitle == "Machiss")
     #expect(MatchBoxPresentation.menuBarSymbol == "heart.text.square")
 }

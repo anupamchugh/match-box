@@ -10,6 +10,68 @@ public enum MatchInboxCLIError: Error, Equatable {
 }
 
 public enum MatchInboxCommand {
+    public static func runImportIntoLocalStore(arguments: [String]) throws -> String {
+        guard arguments.count == 3 else { throw MatchInboxCLIError.usage }
+        let selected = try MatchImportDecoder.decode(Data(contentsOf: URL(filePath: arguments[1])))
+        let store = try SwiftDataHistoryStore.persistent(at: URL(filePath: arguments[2]))
+        let merged = try store.load(ownerID: selected.ownerID).map { try MatchInboxHistory.merge(existing: $0, selected: selected) } ?? selected
+        try store.save(merged)
+        return "IMPORTED LOCALLY: \(selected.profiles.count) profiles, \(selected.threads.count) threads"
+    }
+
+    public static func runStoredInbox(arguments: [String]) throws -> String {
+        guard arguments.count == 2 else { throw MatchInboxCLIError.usage }
+        let store = try SwiftDataHistoryStore.persistent(at: URL(filePath: arguments[1]))
+        guard let history = try store.load(ownerID: "owner") else { return "" }
+        return inbox(history)
+    }
+
+    public static func runStoredDump(arguments: [String]) throws -> String {
+        guard arguments.count == 2 else { throw MatchInboxCLIError.usage }
+        let store = try SwiftDataHistoryStore.persistent(at: URL(filePath: arguments[1]))
+        guard let history = try store.load(ownerID: "owner") else { return "{}" }
+        let data = try JSONEncoder().encode(history)
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    public static func runStoredIdeas(arguments: [String]) async throws -> String {
+        guard arguments.count == 4 || (arguments.count == 5 && arguments.last == "--local-model") else { throw MatchInboxCLIError.usage }
+        let store = try SwiftDataHistoryStore.persistent(at: URL(filePath: arguments[1]))
+        guard let history = try store.load(ownerID: "owner") else { throw MatchInboxCLIError.missingThread(arguments[2]) }
+        return try await renderIdeas(history: history, threadID: arguments[2], modeName: arguments[3], includeAvailability: arguments.count == 5)
+    }
+
+    public static func runIdeas(arguments: [String]) async throws -> String {
+        guard arguments.count == 4 || (arguments.count == 5 && arguments.last == "--local-model") else { throw MatchInboxCLIError.usage }
+        let input = try MatchImportDecoder.decode(Data(contentsOf: URL(filePath: arguments[1])))
+        return try await renderIdeas(history: input, threadID: arguments[2], modeName: arguments[3], includeAvailability: arguments.count == 5)
+    }
+
+    private static func renderIdeas(history input: MatchImport, threadID: String, modeName: String, includeAvailability: Bool) async throws -> String {
+        guard let mode = ConversationMode(rawValue: modeName) else { throw MatchInboxCLIError.usage }
+        guard let thread = input.threads.first(where: { $0.id == threadID }) else { throw MatchInboxCLIError.missingThread(threadID) }
+        guard let profile = input.profiles.first(where: { $0.id == thread.participantID }) else {
+            throw MatchInboxCLIError.missingProfile(thread.participantID)
+        }
+        let recent = Array(thread.messages.suffix(8))
+        let context = ConversationSuggestionContext(
+            matchProfileFacts: profile.visibleFacts,
+            ownerProfileFacts: input.profiles.filter { $0.subject == .ownerProfile }.flatMap(\.visibleFacts),
+            incomingMessages: recent.filter { $0.direction == .incoming }.map(\.text),
+            outgoingMessages: recent.filter { $0.direction == .outgoing }.map(\.text)
+        )
+        let suggestions = await LocalSuggestionGenerator.suggestions(mode: mode, context: context)
+        let header = includeAvailability
+            ? "LOCAL MODEL: \(LocalDraftProvider.availability.description)"
+            : "LOCAL DETERMINISTIC SUGGESTION"
+        let body = suggestions.enumerated().map { index, suggestion in
+            var lines = ["\(index + 1). \(suggestion.text)", "   EVIDENCE: \(suggestion.evidenceIDs.joined(separator: ", "))", "   UNKNOWNS: \(suggestion.uncertainty)"]
+            if let opener = suggestion.optionalOpener { lines.append("   APPROVAL DRAFT ONLY: \(opener)") }
+            return lines.joined(separator: "\n")
+        }.joined(separator: "\n")
+        return "\(header)\n\(body)\nSEND: disabled; copy/review manually in Bumble."
+    }
+
     public static func runOnDeviceReview(arguments: [String]) async throws -> String {
         guard arguments.count == 3 else { throw MatchInboxCLIError.usage }
         let input = try MatchImportDecoder.decode(Data(contentsOf: URL(filePath: arguments[1])))
@@ -19,7 +81,7 @@ public enum MatchInboxCommand {
         return await renderOnDeviceReview(profile: profile)
     }
 
-    /// Reviews the approved SwiftData history used by the Match Box app.
+    /// Reviews the approved SwiftData history used by the Machiss app.
     /// This is intentionally a local-store command rather than treating SQLite
     /// bytes as an import snapshot.
     public static func runStoredOnDeviceReview(arguments: [String]) async throws -> String {
