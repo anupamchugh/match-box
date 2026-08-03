@@ -1,7 +1,7 @@
 import Foundation
 
 public enum MatchBoxPresentation {
-    public static let menuBarTitle = "Match Box"
+    public static let menuBarTitle = "Machiss"
     public static let menuBarSymbol = "heart.text.square"
 }
 
@@ -124,11 +124,39 @@ public struct Message: Codable, Equatable, Hashable, Sendable {
     public let direction: MessageDirection
     public let text: String
     public let timestamp: String?
+    public let authorship: MessageAuthorship
 
-    public init(direction: MessageDirection, text: String, timestamp: String? = nil) {
+    public init(direction: MessageDirection, text: String, timestamp: String? = nil, authorship: MessageAuthorship = .unknown) {
         self.direction = direction
         self.text = text
         self.timestamp = timestamp
+        self.authorship = authorship
+    }
+
+    private enum CodingKeys: String, CodingKey { case direction, text, timestamp, authorship }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        direction = try container.decode(MessageDirection.self, forKey: .direction)
+        text = try container.decode(String.self, forKey: .text)
+        timestamp = try container.decodeIfPresent(String.self, forKey: .timestamp)
+        authorship = try container.decodeIfPresent(MessageAuthorship.self, forKey: .authorship) ?? .unknown
+    }
+}
+
+public enum MessageAuthorship: String, Codable, Equatable, Hashable, Sendable {
+    case unknown
+    case manual
+    case fmSuggested
+    case fmEdited
+
+    public var label: String {
+        switch self {
+        case .unknown: "Authorship not recorded"
+        case .manual: "Written manually"
+        case .fmSuggested: "Foundation Models suggestion"
+        case .fmEdited: "Edited from a Foundation Models suggestion"
+        }
     }
 }
 
@@ -289,6 +317,7 @@ public enum ScreenKind: String, Codable, Equatable, Hashable, Sendable {
 }
 
 public enum MatchBoxInboxSection: String, CaseIterable, Sendable {
+    case suggestions
     case chats
     case likes
     case profiles
@@ -299,6 +328,8 @@ public enum MatchBoxInbox {
     public static func sections(for history: MatchImport) -> [MatchBoxInboxSection] {
         MatchBoxInboxSection.allCases.filter { section in
             switch section {
+            case .suggestions:
+                !history.profiles.isEmpty || !history.threads.isEmpty
             case .chats:
                 !history.threads.isEmpty || history.profiles.contains { $0.capturedKinds.contains(where: isChat) }
             case .likes:
@@ -315,6 +346,8 @@ public enum MatchBoxInbox {
 
     public static func profiles(in history: MatchImport, section: MatchBoxInboxSection) -> [Profile] {
         switch section {
+        case .suggestions:
+            return []
         case .chats:
             return history.profiles.filter { $0.capturedKinds.contains(where: isChat) }
         case .likes:
@@ -344,12 +377,14 @@ public struct VisibleObservation: Codable, Equatable, Sendable {
     public let text: String
     public let confidence: Double
     public let positionX: Double?
+    public let positionY: Double?
 
-    public init(field: String, text: String, confidence: Double, positionX: Double? = nil) {
+    public init(field: String, text: String, confidence: Double, positionX: Double? = nil, positionY: Double? = nil) {
         self.field = field
         self.text = text
         self.confidence = confidence
         self.positionX = positionX
+        self.positionY = positionY
     }
 }
 
@@ -359,6 +394,41 @@ public struct ScreenCapture: Codable, Equatable, Sendable {
     public let observations: [VisibleObservation]
     public let capturedAt: String
     public init(sourceApp: String, kind: ScreenKind, observations: [VisibleObservation], capturedAt: String) { self.sourceApp = sourceApp; self.kind = kind; self.observations = observations; self.capturedAt = capturedAt }
+}
+
+/// Deterministic comparison for a fresh owner-selected capture. Foundation
+/// Models may explain this result later, but never decide what is new.
+public struct CaptureDiff: Equatable, Sendable {
+    public let newVisibleText: [String]
+    public let previousCaptureAt: String?
+
+    public var isFresh: Bool { !newVisibleText.isEmpty }
+
+    public init(newVisibleText: [String], previousCaptureAt: String?) {
+        self.newVisibleText = newVisibleText
+        self.previousCaptureAt = previousCaptureAt
+    }
+
+    public static func compare(capture: ScreenCapture, history: MatchImport?) -> CaptureDiff {
+        let priorFacts = history?.profiles.flatMap(\.visibleFacts) ?? []
+        let priorMessages = history?.threads.flatMap(\.messages).map(\.text) ?? []
+        let priorText = Set((priorFacts + priorMessages).map(normalize))
+        var seen = Set<String>()
+        let newText = capture.observations.compactMap { observation -> String? in
+            let normalized = normalize(observation.text)
+            guard !normalized.isEmpty, !priorText.contains(normalized), seen.insert(normalized).inserted else { return nil }
+            return observation.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return CaptureDiff(newVisibleText: newText, previousCaptureAt: history?.provenance?.capturedAt)
+    }
+
+    private static func normalize(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let separator = trimmed.firstIndex(of: ":") {
+            return String(trimmed[trimmed.index(after: separator)...]).trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        }
+        return trimmed.lowercased()
+    }
 }
 
 /// Development-only adapter for typed observations supplied by a local Mirroir MCP host.
@@ -394,7 +464,7 @@ public enum MirroirBridge {
 
     /// Accepts local development observations that include the geometry supplied
     /// by Mirroir. The observations are still preview-only until the owner
-    /// approves their import in Match Box.
+    /// approves their import in Machiss.
     public static func makeCapture(
         observations: [VisibleObservation],
         capturedAt: String,
@@ -457,7 +527,7 @@ public enum ProfileObservationAdapter {
     }
 
     private static func relabel(_ observation: VisibleObservation, field: String) -> VisibleObservation {
-        VisibleObservation(field: field, text: observation.text, confidence: observation.confidence, positionX: observation.positionX)
+        VisibleObservation(field: field, text: observation.text, confidence: observation.confidence, positionX: observation.positionX, positionY: observation.positionY)
     }
 }
 
@@ -486,13 +556,28 @@ public struct CaptureIdentity: Equatable, Sendable {
         default:
             break
         }
-        let rawToken = observations
+        let sourceObservations: [VisibleObservation]
+        if kind == .bumbleThread || kind == .hingeThread,
+           observations.contains(where: { ($0.positionY ?? 0) >= 0.72 }) {
+            sourceObservations = observations.filter { ($0.positionY ?? 0) >= 0.72 }
+        } else {
+            sourceObservations = observations
+        }
+        let rawToken = sourceObservations
             .map(\.text)
             .flatMap { $0.split(whereSeparator: { $0 == "," || $0 == "\n" || $0 == " " }) }
             .map(String.init)
             .first { value in
                 let trimmed = value.trimmingCharacters(in: .punctuationCharacters)
-                return trimmed.count >= 1 && trimmed.count <= 32 && trimmed.rangeOfCharacter(from: .letters) != nil
+                let normalized = trimmed.lowercased()
+                let ocrChrome: Set<String> = [
+                    "your", "opening", "move", "today", "chats", "liked", "you",
+                    "profile", "discover", "people", "message", "delivered", "read",
+                    "conversation", "expires", "hours", "reply", "back", "what"
+                ]
+                return trimmed.count >= 1 && trimmed.count <= 32
+                    && trimmed.rangeOfCharacter(from: .letters) != nil
+                    && !ocrChrome.contains(normalized)
             }
         let token = rawToken?.trimmingCharacters(in: .punctuationCharacters)
 
@@ -527,15 +612,40 @@ public enum CaptureImportError: Error, Equatable {
 
 public enum ConversationExtractor {
     public static func messages(from observations: [VisibleObservation]) -> [Message] {
-        observations.compactMap { observation in
+        let extracted = observations.compactMap { observation -> Message? in
             guard let positionX = observation.positionX, !isConversationChrome(observation.text) else { return nil }
             return Message(direction: positionX >= 0.5 ? .outgoing : .incoming, text: observation.text)
+        }
+        return extracted.reduce(into: [Message]()) { messages, message in
+            guard let prior = messages.last,
+                  prior.direction == message.direction,
+                  isLikelyWrappedLine(previous: prior.text, next: message.text)
+            else {
+                messages.append(message)
+                return
+            }
+            messages[messages.index(before: messages.endIndex)] = Message(
+                direction: prior.direction,
+                text: "\(prior.text) \(message.text)",
+                timestamp: prior.timestamp,
+                authorship: prior.authorship
+            )
         }
     }
 
     private static func isConversationChrome(_ text: String) -> Bool {
         let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return normalized.isEmpty || ["delivered", "read", "aa", "+"].contains(normalized)
+    }
+
+    private static func isLikelyWrappedLine(previous: String, next: String) -> Bool {
+        let previousTrimmed = previous.trimmingCharacters(in: .whitespacesAndNewlines)
+        let nextTrimmed = next.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !previousTrimmed.isEmpty, !nextTrimmed.isEmpty,
+              !previousTrimmed.hasSuffix(".") && !previousTrimmed.hasSuffix("?") && !previousTrimmed.hasSuffix("!")
+        else { return false }
+        guard let first = nextTrimmed.first else { return false }
+        return first.isLowercase || previousTrimmed.split(separator: " ").count >= 4
     }
 }
 

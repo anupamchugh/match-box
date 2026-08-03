@@ -61,4 +61,13 @@ public final class SwiftDataHistoryStore {
         guard let history = try context.fetch(descriptor).first else { return nil }
         return try MatchImportDecoder.decode(history.payload)
     }
+
+    public func clear(ownerID: String) throws {
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<StoredMatchHistory>(predicate: #Predicate { $0.ownerID == ownerID })
+        for record in try context.fetch(descriptor) {
+            context.delete(record)
+        }
+        try context.save()
+    }
 }

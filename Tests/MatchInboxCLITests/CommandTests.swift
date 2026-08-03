@@ -47,7 +47,7 @@ func reviewsProfileWithoutDrafting() throws {
     let file = try fixtureFile()
     let output = try MatchInboxCommand.run(arguments: ["review", file.path, "alex"])
 
-    #expect(output.contains("OBSERVED:"))
+    #expect(output.contains("OBSERVED"))
     #expect(output.contains("Likes coffee"))
     #expect(output.contains("UNKNOWNS:"))
     #expect(!output.contains("I noticed"))
@@ -134,7 +134,7 @@ func validatesOnDeviceReviewProfile() async throws {
     }
 }
 
-@Test("on-device review reads the same SwiftData history used by Match Box")
+@Test("on-device review reads the same SwiftData history used by Machiss")
 func reviewsPersistedLocalHistory() async throws {
     let directory = URL.temporaryDirectory.appending(path: "match-box-local-review-\(UUID().uuidString)", directoryHint: .isDirectory)
     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -149,7 +149,7 @@ func reviewsPersistedLocalHistory() async throws {
 
     let output = try await MatchInboxCommand.runStoredOnDeviceReview(arguments: ["review-local", storeURL.path(), "bumble-likes"])
 
-    #expect(output.contains("OBSERVED:"))
+    #expect(output.contains("OBSERVED"))
     #expect(output.contains("[obs-1]"))
 }
 

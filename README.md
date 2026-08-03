@@ -1,4 +1,6 @@
-# Match Box
+# Machiss
+
+**Conversational dating, grounded in your stories and conversations.**
 
 A private, local macOS companion for reviewing owner-selected visible dating
 context. It includes a Swift CLI and a packaged Mac app. The app captures the
@@ -11,14 +13,13 @@ swipe, like, match, contact, or send capability. Mirroir MCP is useful while
 developing and validating the visible-screen adapters; it is not a shipped app
 dependency.
 
-Read the draft [privacy notes](docs/PRIVACY.md) and the local-only
-[Product Hunt draft](docs/PRODUCT_HUNT_DRAFT.md) before preparing any public
-material.
+Read the [privacy notes](docs/PRIVACY.md) and [support guide](docs/SUPPORT.md)
+before preparing public material.
 
-![Fictional Match Box grounded-suggestion demo](docs/assets/match-box-suggestions-fictional-demo.png)
+![Fictional Machiss grounded-suggestion demo](docs/assets/machiss-fictional-demo.png)
 
 *Fictional demo content only. Suggestions are grounded in visible context;
-Match Box has no Bumble, Hinge, or other dating-service API integration.*
+Machiss has no Bumble, Hinge, or other dating-service API integration.*
 
 ## OSS status
 
@@ -30,7 +31,7 @@ policy](docs/SECURITY.md), and [contribution guide](CONTRIBUTING.md).
 
 **Bumble-tested:** visible Profile, Likes, Chats, and Thread adapters have
 bounded local test evidence. **Hinge:** classified fixtures exist; live owner
-acceptance remains pending. Match Box is independent and unaffiliated with
+acceptance remains pending. Machiss is independent and unaffiliated with
 Bumble, Hinge, or any other dating service; their names are used only to
 describe compatible visible-screen adapters.
 
@@ -40,7 +41,7 @@ describe compatible visible-screen adapters.
 ./script/build_and_run.sh
 ```
 
-Open iPhone Mirroring, then choose **Capture iPhone Mirroring** in Match Box.
+Open iPhone Mirroring, then choose **Read visible screen** in Machiss.
 Grant macOS Screen Recording permission when prompted. Review the literal OCR
 text and choose **Save approved context**. The optional on-device review uses
 Apple Foundation Models only on already-saved text; it has no cloud fallback
@@ -85,7 +86,7 @@ cannot be saved.
 Every draft prints the imported message or profile fact that grounded it. The
 owner chooses whether to send any draft in the source app.
 
-To review an approved Match Box SwiftData store instead of a JSON sample:
+To review an approved Machiss SwiftData store instead of a JSON sample:
 
 ```sh
 swift run match-inbox review-local \
@@ -99,7 +100,7 @@ This command reads only the local store and never sends output to a provider.
 
 Mirroir MCP is optional test infrastructure, not a shipped dependency. A local
 MCP host can pass visible screen labels to the Swift CLI, which writes a
-review-only preview for Match Box:
+review-only preview for Machiss:
 
 ```sh
 swift run match-inbox mirroir-preview \
@@ -107,7 +108,7 @@ swift run match-inbox mirroir-preview \
   "Chats" "Your matches (2)" "Chats (Recent)"
 ```
 
-Choose **Import Mirroir test preview** in Match Box. It follows the same
+Choose **Import Mirroir test preview** in Machiss. It follows the same
 literal-OCR preview and explicit save approval as native capture. The bridge
 does not send, tap, swipe, or write to a dating app; unrecognized screens stay
 unsavable.

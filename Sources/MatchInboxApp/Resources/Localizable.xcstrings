@@ -1,0 +1,36 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "No optional profile context saved yet." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No optional profile context saved yet." } }
+      }
+    },
+    "Optional profile context" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Optional profile context" } }
+      }
+    },
+    "Profile context is optional. The conversation above comes first." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Profile context is optional. The conversation above comes first." } }
+      }
+    },
+    "The conversation" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The conversation" } }
+      }
+    },
+    "These messages are the starting point for ideas. Optional profile context appears below." : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "These messages are the starting point for ideas. Optional profile context appears below." } }
+      }
+    },
+    "Why this idea" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Why this idea" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

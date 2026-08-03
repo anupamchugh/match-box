@@ -13,6 +13,7 @@ if pgrep -x MatchInboxApp >/dev/null 2>&1; then
   pkill -x MatchInboxApp || true
 fi
 
+rm -rf "$bundle_path"
 mkdir -p "$bundle_path/Contents/MacOS"
 cp "$binary_path" "$bundle_path/Contents/MacOS/MatchInboxApp"
 plutil -create xml1 "$bundle_path/Contents/Info.plist"
@@ -21,7 +22,7 @@ plutil -replace CFBundleExecutable -string MatchInboxApp "$bundle_path/Contents/
 plutil -replace CFBundleIdentifier -string com.anupamchugh.matchinbox "$bundle_path/Contents/Info.plist"
 plutil -replace CFBundleName -string "$app_name" "$bundle_path/Contents/Info.plist"
 plutil -replace CFBundleDisplayName -string "$app_name" "$bundle_path/Contents/Info.plist"
-plutil -replace LSMinimumSystemVersion -string 15.0 "$bundle_path/Contents/Info.plist"
+plutil -replace LSMinimumSystemVersion -string 26.0 "$bundle_path/Contents/Info.plist"
 plutil -replace NSPrincipalClass -string NSApplication "$bundle_path/Contents/Info.plist"
 plutil -replace NSScreenCaptureUsageDescription -string "Match Box captures an iPhone Mirroring window you select to read visible context locally." "$bundle_path/Contents/Info.plist"
 

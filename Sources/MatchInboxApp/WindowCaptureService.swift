@@ -3,6 +3,7 @@ import CoreGraphics
 import ScreenCaptureKit
 import Vision
 import OSLog
+import Observation
 import MatchInboxCore
 
 enum WindowCaptureError: LocalizedError {
@@ -20,11 +21,12 @@ enum WindowCaptureError: LocalizedError {
 }
 
 @MainActor
-final class WindowCaptureService: ObservableObject {
+@Observable
+final class WindowCaptureService {
     private let logger = Logger(subsystem: "com.anupamchugh.matchinbox", category: "capture")
-    @Published private(set) var capture: ScreenCapture?
-    @Published private(set) var errorMessage: String?
-    @Published private(set) var isCapturing = false
+    private(set) var capture: ScreenCapture?
+    private(set) var errorMessage: String?
+    private(set) var isCapturing = false
 
     func captureIPhoneMirroring() async {
         isCapturing = true
@@ -66,7 +68,7 @@ final class WindowCaptureService: ObservableObject {
             capture = try JSONDecoder().decode(ScreenCapture.self, from: Data(contentsOf: url))
             logger.notice("Imported development bridge preview kind=\(self.capture?.kind.rawValue ?? "unknown", privacy: .public)")
         } catch {
-            errorMessage = "No local Mirroir development preview was found. Export one with the Match Box CLI first."
+            errorMessage = "No local Mirroir development preview was found. Export one with the Machiss CLI first."
             logger.error("Development bridge import failed: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -91,7 +93,8 @@ final class WindowCaptureService: ObservableObject {
                 field: "visible_text",
                 text: candidate.string,
                 confidence: Double(candidate.confidence),
-                positionX: Double(result.boundingBox.midX)
+                positionX: Double(result.boundingBox.midX),
+                positionY: Double(result.boundingBox.midY)
             )
         }
         guard !observations.isEmpty else { throw WindowCaptureError.noRecognizedText }

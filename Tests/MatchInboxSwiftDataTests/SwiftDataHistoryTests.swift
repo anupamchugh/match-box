@@ -20,6 +20,16 @@ func storesSelectedHistory() throws {
     #expect(try store.load(ownerID: "me") == snapshot)
 }
 
+@Test("SwiftData can clear the owner's local history")
+func clearsOwnerHistory() throws {
+    let store = try SwiftDataHistoryStore.inMemory()
+    try store.save(MatchImport(ownerID: "me", profiles: [Profile(id: "alex", displayName: "Alex")], threads: []))
+
+    try store.clear(ownerID: "me")
+
+    #expect(try store.load(ownerID: "me") == nil)
+}
+
 }
 
 @Test("SwiftData persists history in a dedicated caller-selected store")
