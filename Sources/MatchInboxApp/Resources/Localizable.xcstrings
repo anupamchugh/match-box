@@ -26,9 +26,14 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "These messages are the starting point for ideas. Optional profile context appears below." } }
       }
     },
-    "Why this idea" : {
+    "Based on what you shared" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Why this idea" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Based on what you shared" } }
+      }
+    },
+    "What may be missing" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "What may be missing" } }
       }
     }
   },
