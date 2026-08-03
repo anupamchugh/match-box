@@ -211,7 +211,7 @@ private struct SuggestionCard: View {
                 }
             }
             Divider()
-            Text(MatchBoxCopy.whyThisIdea)
+            Text(MatchBoxCopy.basedOnWhatYouShared)
                 .font(.subheadline.weight(.semibold))
             ForEach(suggestion.evidenceIDs, id: \.self) { evidenceID in
                 if let item = evidence.first(where: { $0.id == evidenceID }) {
@@ -221,7 +221,7 @@ private struct SuggestionCard: View {
                         .textSelection(.enabled)
                 }
             }
-            Label(suggestion.uncertainty, systemImage: "questionmark.circle")
+            Label("\(MatchBoxCopy.whatMayBeMissingText): \(suggestion.uncertainty)", systemImage: "questionmark.circle")
                 .font(.footnote)
                 .foregroundStyle(.orange)
         }
